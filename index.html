@@ -45,31 +45,72 @@
     margin-bottom: 16px;
   }
 
-  /* Tier Toggle */
-  .tier-toggle {
+  /* Tier selector — dev option at bottom */
+  .tier-footer {
+    margin-top: 24px;
+    padding-top: 12px;
+    border-top: 1px solid #222;
     display: flex;
-    border: 2px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    margin-bottom: 16px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
   }
 
-  .tier-btn {
-    flex: 1;
-    padding: 12px 8px;
-    border: none;
+  .tier-footer label {
+    font-size: 0.65rem;
+    color: #333;
+    letter-spacing: 0.05em;
+  }
+
+  .tier-select {
+    background: transparent;
+    border: 1px solid #252525;
+    border-radius: 4px;
+    color: #333;
+    font-family: inherit;
+    font-size: 0.65rem;
+    padding: 3px 6px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .tier-select option {
     background: var(--surface);
     color: var(--muted);
-    font-family: inherit;
-    font-size: 0.8rem;
-    font-weight: 500;
-    text-transform: lowercase;
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    transition: all 0.15s;
   }
 
-  .tier-btn.active { background: var(--surface2); color: var(--text); }
+  .tier-select:focus { outline: none; }
+
+  /* Order summary */
+  .order-summary {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .order-summary.empty {
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-style: italic;
+  }
+
+  .order-tag {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
 
   /* Tax Toggle */
   .tax-row {
@@ -264,13 +305,6 @@
 
 <div id="app" style="display:none">
 
-  <!-- Tier Toggle -->
-  <div class="tier-toggle">
-    <button class="tier-btn" data-tier="low"  onclick="setTier('low')">cookie</button>
-    <button class="tier-btn" data-tier="mid"  onclick="setTier('mid')">cupcake</button>
-    <button class="tier-btn" data-tier="high" onclick="setTier('high')">tiramisu</button>
-  </div>
-
   <!-- Tax Toggle -->
   <div class="tax-row">
     <span class="tax-label">+ Tax (8.5%)</span>
@@ -288,6 +322,9 @@
       <span class="slider"></span>
     </label>
   </div>
+
+  <!-- Order Summary -->
+  <div class="order-summary empty" id="order-summary">nothing yet</div>
 
   <!-- Items -->
   <div class="items-grid" id="items-grid"></div>
@@ -313,6 +350,16 @@
   </div>
 
   <button class="reset-btn" onclick="resetAll()">↺ Reset All</button>
+
+  <!-- Dev tier selector -->
+  <div class="tier-footer">
+    <label for="tierSelect">v</label>
+    <select class="tier-select" id="tierSelect" onchange="setTier(this.value)">
+      <option value="low">cookie</option>
+      <option value="mid" selected>cupcake</option>
+      <option value="high">tiramisu</option>
+    </select>
+  </div>
 </div>
 
 <div class="status" id="status">Fetching prices…</div>
@@ -343,9 +390,8 @@ function getTierKey() {
 
 function setTier(tier) {
   currentTier = tier;
-  document.querySelectorAll('.tier-btn').forEach(b => {
-    b.className = 'tier-btn' + (b.dataset.tier === tier ? ' active' : '');
-  });
+  const sel = document.getElementById('tierSelect');
+  if (sel) sel.value = tier;
   render();
 }
 
@@ -386,6 +432,19 @@ function render() {
   document.getElementById('grand-total').textContent = `$${total.toFixed(2)}`;
   document.getElementById('tax-line').style.display = taxOn ? 'flex' : 'none';
   document.getElementById('card-line').style.display = cardOn ? 'flex' : 'none';
+
+  // Order summary
+  const summary = document.getElementById('order-summary');
+  const ordered = items.filter(item => (quantities[item.name] || 0) > 0);
+  if (ordered.length === 0) {
+    summary.className = 'order-summary empty';
+    summary.innerHTML = 'nothing yet';
+  } else {
+    summary.className = 'order-summary';
+    summary.innerHTML = ordered.map(item =>
+      `<span class="order-tag">${quantities[item.name]}× ${item.name}</span>`
+    ).join('');
+  }
 }
 
 function changeQty(name, delta) {
