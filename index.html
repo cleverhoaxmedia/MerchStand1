@@ -56,22 +56,20 @@
 
   .tier-btn {
     flex: 1;
-    padding: 14px 8px;
+    padding: 12px 8px;
     border: none;
     background: var(--surface);
     color: var(--muted);
     font-family: inherit;
-    font-size: 1rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
     cursor: pointer;
     transition: all 0.15s;
   }
 
-  .tier-btn.active-low  { background: var(--low);  color: #000; }
-  .tier-btn.active-mid  { background: var(--mid);  color: #000; }
-  .tier-btn.active-high { background: var(--high); color: #000; }
+  .tier-btn.active { background: var(--surface2); color: var(--text); }
 
   /* Tax Toggle */
   .tax-row {
@@ -154,9 +152,9 @@
     text-align: right;
   }
 
-  .item-price.tier-low  { color: var(--low); }
-  .item-price.tier-mid  { color: var(--mid); }
-  .item-price.tier-high { color: var(--high); }
+  .item-price.tier-low,
+  .item-price.tier-mid,
+  .item-price.tier-high { color: var(--accent); }
 
   .qty-controls {
     display: flex;
@@ -268,9 +266,9 @@
 
   <!-- Tier Toggle -->
   <div class="tier-toggle">
-    <button class="tier-btn" data-tier="low"  onclick="setTier('low')">LOW</button>
-    <button class="tier-btn" data-tier="mid"  onclick="setTier('mid')">MID</button>
-    <button class="tier-btn" data-tier="high" onclick="setTier('high')">HIGH</button>
+    <button class="tier-btn" data-tier="low"  onclick="setTier('low')">cookie</button>
+    <button class="tier-btn" data-tier="mid"  onclick="setTier('mid')">cupcake</button>
+    <button class="tier-btn" data-tier="high" onclick="setTier('high')">tiramisu</button>
   </div>
 
   <!-- Tax Toggle -->
@@ -278,6 +276,15 @@
     <span class="tax-label">+ Tax (8.5%)</span>
     <label class="toggle-switch">
       <input type="checkbox" id="taxToggle" onchange="render()">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <!-- Card Fee Toggle -->
+  <div class="tax-row">
+    <span class="tax-label">+ Card Fee ($2.00)</span>
+    <label class="toggle-switch">
+      <input type="checkbox" id="cardToggle" onchange="render()">
       <span class="slider"></span>
     </label>
   </div>
@@ -294,6 +301,10 @@
     <div class="total-line" id="tax-line" style="display:none">
       <span class="label">Tax (8.5%)</span>
       <span id="tax-amount">$0.00</span>
+    </div>
+    <div class="total-line" id="card-line" style="display:none">
+      <span class="label">Card Fee</span>
+      <span id="card-amount">$2.00</span>
     </div>
     <div class="total-line grand-total">
       <span class="label">TOTAL</span>
@@ -333,7 +344,7 @@ function getTierKey() {
 function setTier(tier) {
   currentTier = tier;
   document.querySelectorAll('.tier-btn').forEach(b => {
-    b.className = 'tier-btn' + (b.dataset.tier === tier ? ` active-${tier}` : '');
+    b.className = 'tier-btn' + (b.dataset.tier === tier ? ' active' : '');
   });
   render();
 }
@@ -365,13 +376,16 @@ function render() {
     return sum + qty * price;
   }, 0);
 
+  const cardOn = document.getElementById('cardToggle').checked;
   const tax = taxOn ? subtotal * 0.085 : 0;
-  const total = subtotal + tax;
+  const card = cardOn ? 2 : 0;
+  const total = subtotal + tax + card;
 
   document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
   document.getElementById('tax-amount').textContent = `$${tax.toFixed(2)}`;
   document.getElementById('grand-total').textContent = `$${total.toFixed(2)}`;
   document.getElementById('tax-line').style.display = taxOn ? 'flex' : 'none';
+  document.getElementById('card-line').style.display = cardOn ? 'flex' : 'none';
 }
 
 function changeQty(name, delta) {
