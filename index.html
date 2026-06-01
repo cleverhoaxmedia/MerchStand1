@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Merch Calculator</title>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1c1c1c;
+    --surface2: #2a2a2a;
+    --border: #3a3a3a;
+    --text: #f0f0f0;
+    --muted: #888;
+    --low: #4ade80;
+    --mid: #facc15;
+    --high: #f87171;
+    --accent: #60a5fa;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-bottom: 16px;
+  }
+
+  /* Tier Toggle */
+  .tier-toggle {
+    display: flex;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .tier-btn {
+    flex: 1;
+    padding: 14px 8px;
+    border: none;
+    background: var(--surface);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tier-btn.active-low  { background: var(--low);  color: #000; }
+  .tier-btn.active-mid  { background: var(--mid);  color: #000; }
+  .tier-btn.active-high { background: var(--high); color: #000; }
+
+  /* Tax Toggle */
+  .tax-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+
+  .tax-label {
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 60px;
+    height: 32px;
+  }
+
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+  .slider {
+    position: absolute;
+    inset: 0;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 32px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .slider::before {
+    content: '';
+    position: absolute;
+    width: 22px; height: 22px;
+    left: 3px; top: 3px;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+
+  input:checked + .slider { background: var(--accent); border-color: var(--accent); }
+  input:checked + .slider::before { transform: translateX(28px); background: #fff; }
+
+  /* Items */
+  .items-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .item-row {
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .item-name {
+    flex: 1;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .item-price {
+    font-size: 1rem;
+    color: var(--muted);
+    min-width: 44px;
+    text-align: right;
+  }
+
+  .item-price.tier-low  { color: var(--low); }
+  .item-price.tier-mid  { color: var(--mid); }
+  .item-price.tier-high { color: var(--high); }
+
+  .qty-controls {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .qty-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 1.3rem;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .qty-btn:active { background: var(--border); }
+
+  .qty-display {
+    width: 36px;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+    background: var(--bg);
+    color: var(--text);
+    border: none;
+    border-left: 2px solid var(--border);
+    border-right: 2px solid var(--border);
+    height: 40px;
+    line-height: 40px;
+  }
+
+  /* Totals */
+  .totals-box {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .total-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 1rem;
+  }
+
+  .total-line:not(:last-child) {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .total-line .label { color: var(--muted); font-size: 0.9rem; }
+
+  .grand-total {
+    font-size: 1.6rem;
+    font-weight: 900;
+  }
+
+  .grand-total .label { color: var(--text); font-size: 1rem; font-weight: 700; }
+
+  /* Reset */
+  .reset-btn {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface2);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+
+  .reset-btn:active { background: #3a1a1a; color: var(--high); border-color: var(--high); }
+
+  /* Loading/error */
+  .status {
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .status.error { color: var(--high); }
+</style>
+</head>
+<body>
+
+<h1>🛍 Merch Calc</h1>
+<div class="subtitle" id="last-updated">Loading data…</div>
+
+<div id="app" style="display:none">
+
+  <!-- Tier Toggle -->
+  <div class="tier-toggle">
+    <button class="tier-btn" data-tier="low"  onclick="setTier('low')">LOW</button>
+    <button class="tier-btn" data-tier="mid"  onclick="setTier('mid')">MID</button>
+    <button class="tier-btn" data-tier="high" onclick="setTier('high')">HIGH</button>
+  </div>
+
+  <!-- Tax Toggle -->
+  <div class="tax-row">
+    <span class="tax-label">+ Tax (8.5%)</span>
+    <label class="toggle-switch">
+      <input type="checkbox" id="taxToggle" onchange="render()">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <!-- Items -->
+  <div class="items-grid" id="items-grid"></div>
+
+  <!-- Totals -->
+  <div class="totals-box">
+    <div class="total-line">
+      <span class="label">Subtotal</span>
+      <span id="subtotal">$0.00</span>
+    </div>
+    <div class="total-line" id="tax-line" style="display:none">
+      <span class="label">Tax (8.5%)</span>
+      <span id="tax-amount">$0.00</span>
+    </div>
+    <div class="total-line grand-total">
+      <span class="label">TOTAL</span>
+      <span id="grand-total">$0.00</span>
+    </div>
+  </div>
+
+  <button class="reset-btn" onclick="resetAll()">↺ Reset All</button>
+</div>
+
+<div class="status" id="status">Fetching prices…</div>
+
+<script>
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSN5_ovygfet8p9Pr9T9Vlek8PCD7EKOA1UGxAVY4gliPrW-UlzPaYHvufQy1UZX9e8JbhR7mmldHA9/pub?output=csv';
+
+let items = [];
+let quantities = {};
+let currentTier = 'mid';
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g,''));
+  return lines.slice(1).map(line => {
+    const cols = line.split(',').map(c => c.trim().replace(/"/g,''));
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = cols[i] || '');
+    return obj;
+  }).filter(r => r['name'] && r['name'].trim());
+}
+
+function getTierKey() {
+  if (currentTier === 'low')  return 'price (low)';
+  if (currentTier === 'mid')  return 'price (mid)';
+  if (currentTier === 'high') return 'price (high)';
+}
+
+function setTier(tier) {
+  currentTier = tier;
+  document.querySelectorAll('.tier-btn').forEach(b => {
+    b.className = 'tier-btn' + (b.dataset.tier === tier ? ` active-${tier}` : '');
+  });
+  render();
+}
+
+function render() {
+  const grid = document.getElementById('items-grid');
+  const taxOn = document.getElementById('taxToggle').checked;
+  const tierKey = getTierKey();
+
+  grid.innerHTML = items.map(item => {
+    const qty = quantities[item.name] || 0;
+    const price = parseFloat(item[tierKey]) || 0;
+    return `
+      <div class="item-row">
+        <span class="item-name">${item.name}</span>
+        <span class="item-price tier-${currentTier}">$${price.toFixed(2)}</span>
+        <div class="qty-controls">
+          <button class="qty-btn" onclick="changeQty('${item.name}', -1)">−</button>
+          <div class="qty-display">${qty}</div>
+          <button class="qty-btn" onclick="changeQty('${item.name}', 1)">+</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Totals
+  const subtotal = items.reduce((sum, item) => {
+    const qty = quantities[item.name] || 0;
+    const price = parseFloat(item[tierKey]) || 0;
+    return sum + qty * price;
+  }, 0);
+
+  const tax = taxOn ? subtotal * 0.085 : 0;
+  const total = subtotal + tax;
+
+  document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+  document.getElementById('tax-amount').textContent = `$${tax.toFixed(2)}`;
+  document.getElementById('grand-total').textContent = `$${total.toFixed(2)}`;
+  document.getElementById('tax-line').style.display = taxOn ? 'flex' : 'none';
+}
+
+function changeQty(name, delta) {
+  quantities[name] = Math.max(0, (quantities[name] || 0) + delta);
+  render();
+}
+
+function resetAll() {
+  quantities = {};
+  render();
+}
+
+async function loadData() {
+  try {
+    const res = await fetch(CSV_URL);
+    if (!res.ok) throw new Error('Network error');
+    const text = await res.text();
+    items = parseCSV(text);
+    items.forEach(item => quantities[item.name] = 0);
+
+    document.getElementById('status').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+
+    setTier('mid');
+  } catch (e) {
+    document.getElementById('status').textContent = '⚠ Could not load sheet. Check the share URL.';
+    document.getElementById('status').className = 'status error';
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
