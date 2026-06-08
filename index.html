@@ -6,16 +6,17 @@
 <title>Merch Calculator</title>
 <style>
   :root {
-    --bg: #0f0f0f;
-    --surface: #1c1c1c;
-    --surface2: #2a2a2a;
-    --border: #3a3a3a;
-    --text: #f0f0f0;
-    --muted: #888;
+    --bg: #080808;
+    --surface: #141414;
+    --surface2: #1e1e1e;
+    --border: #2e2e2e;
+    --text: #ffffff;
+    --muted: #aaaaaa;
     --low: #4ade80;
     --mid: #facc15;
     --high: #f87171;
-    --accent: #60a5fa;
+    --accent: #FFE135;
+    --accent-text: #080808;
     --radius: 10px;
   }
 
@@ -30,18 +31,20 @@
   }
 
   h1 {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     font-weight: 900;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     text-align: center;
     margin-bottom: 4px;
+    color: var(--accent);
   }
 
   .subtitle {
     text-align: center;
     color: var(--muted);
     font-size: 0.8rem;
+    letter-spacing: 0.05em;
     margin-bottom: 16px;
   }
 
@@ -121,7 +124,7 @@
     align-items: center;
     justify-content: space-between;
     background: var(--surface);
-    border: 2px solid var(--border);
+    border: 2px solid #333;
     border-radius: var(--radius);
     padding: 14px 16px;
     margin-bottom: 16px;
@@ -129,9 +132,10 @@
 
   .tax-label {
     font-size: 1rem;
-    font-weight: 700;
+    font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
+    color: var(--text);
   }
 
   .toggle-switch {
@@ -163,7 +167,7 @@
   }
 
   input:checked + .slider { background: var(--accent); border-color: var(--accent); }
-  input:checked + .slider::before { transform: translateX(28px); background: #fff; }
+  input:checked + .slider::before { transform: translateX(28px); background: var(--accent-text); }
 
   /* Items */
   .items-grid {
@@ -177,7 +181,7 @@
     display: flex;
     align-items: center;
     background: var(--surface);
-    border: 2px solid var(--border);
+    border: 2px solid #333;
     border-radius: var(--radius);
     padding: 12px 14px;
     gap: 12px;
@@ -186,11 +190,13 @@
   .item-name {
     flex: 1;
     font-size: 1rem;
-    font-weight: 700;
+    font-weight: 900;
+    letter-spacing: 0.03em;
   }
 
   .item-price {
     font-size: 1rem;
+    font-weight: 700;
     color: var(--muted);
     min-width: 44px;
     text-align: right;
@@ -204,7 +210,7 @@
     display: flex;
     align-items: center;
     gap: 0;
-    border: 2px solid var(--border);
+    border: 2px solid #444;
     border-radius: 8px;
     overflow: hidden;
   }
@@ -214,8 +220,8 @@
     height: 40px;
     border: none;
     background: var(--surface2);
-    color: var(--text);
-    font-size: 1.3rem;
+    color: var(--accent);
+    font-size: 1.4rem;
     font-weight: 900;
     cursor: pointer;
     display: flex;
@@ -225,18 +231,18 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  .qty-btn:active { background: var(--border); }
+  .qty-btn:active { background: var(--accent); color: var(--accent-text); }
 
   .qty-display {
     width: 36px;
     text-align: center;
     font-size: 1rem;
-    font-weight: 700;
+    font-weight: 900;
     background: var(--bg);
     color: var(--text);
     border: none;
-    border-left: 2px solid var(--border);
-    border-right: 2px solid var(--border);
+    border-left: 2px solid #444;
+    border-right: 2px solid #444;
     height: 40px;
     line-height: 40px;
   }
@@ -244,7 +250,7 @@
   /* Totals */
   .totals-box {
     background: var(--surface);
-    border: 2px solid var(--border);
+    border: 2px solid #333;
     border-radius: var(--radius);
     padding: 16px;
     margin-bottom: 16px;
@@ -256,34 +262,36 @@
     align-items: center;
     padding: 6px 0;
     font-size: 1rem;
+    font-weight: 700;
   }
 
   .total-line:not(:last-child) {
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid #2e2e2e;
   }
 
-  .total-line .label { color: var(--muted); font-size: 0.9rem; }
+  .total-line .label { color: var(--muted); font-size: 0.9rem; font-weight: 700; letter-spacing: 0.05em; }
 
   .grand-total {
-    font-size: 1.6rem;
+    font-size: 1.8rem;
     font-weight: 900;
+    color: var(--accent);
   }
 
-  .grand-total .label { color: var(--text); font-size: 1rem; font-weight: 700; }
+  .grand-total .label { color: var(--text); font-size: 1rem; font-weight: 900; letter-spacing: 0.08em; }
 
   /* Reset */
   .reset-btn {
     width: 100%;
     padding: 14px;
-    border: 2px solid var(--border);
+    border: 2px solid #444;
     border-radius: var(--radius);
     background: var(--surface2);
     color: var(--muted);
     font-family: inherit;
     font-size: 0.9rem;
-    font-weight: 700;
+    font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.15em;
     cursor: pointer;
     transition: 0.15s;
   }
