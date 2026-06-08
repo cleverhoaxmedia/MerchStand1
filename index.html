@@ -60,27 +60,30 @@
   }
 
   .tier-footer label {
-    font-size: 0.65rem;
-    color: #333;
+    font-size: 0.9rem;
+    color: var(--muted);
     letter-spacing: 0.05em;
+    font-weight: 700;
   }
 
   .tier-select {
-    background: transparent;
-    border: 1px solid #252525;
-    border-radius: 4px;
-    color: #333;
+    background: var(--surface2);
+    border: 2px solid var(--accent);
+    border-radius: 6px;
+    color: var(--accent);
     font-family: inherit;
-    font-size: 0.65rem;
-    padding: 3px 6px;
+    font-size: 0.9rem;
+    font-weight: 900;
+    padding: 5px 10px;
     cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
+    letter-spacing: 0.05em;
   }
 
   .tier-select option {
     background: var(--surface);
-    color: var(--muted);
+    color: var(--text);
   }
 
   .tier-select:focus { outline: none; }
