@@ -497,20 +497,20 @@
   <button class="complete-btn" id="completeBtn" onclick="completeSale()" disabled>✓ Complete Sale</button>
   <div class="sale-confirm" id="saleConfirm" style="display:none"></div>
 
-  <button class="reset-btn" onclick="askReset()">↺ Reset All</button>
+  <button class="reset-btn" onclick="askReset()">↺ Start New Day</button>
 
   <div class="export-row">
     <button class="export-btn" id="exportBtn" onclick="exportSalesCSV()" disabled>⬇ Export Sales CSV</button>
   </div>
 </div>
 
-<!-- Reset confirmation -->
+<!-- Start-new-day confirmation -->
 <div class="modal-overlay" id="resetModal">
   <div class="modal-box">
-    <div class="modal-title">Reset everything?</div>
-    <div class="modal-msg">This clears the current order and the tax / card fee toggles. Your saved sales are not affected.</div>
+    <div class="modal-title">Start a new day?</div>
+    <div class="modal-msg" id="resetMsg"></div>
     <div class="modal-actions">
-      <button class="modal-btn danger" onclick="confirmReset()">Yes, reset</button>
+      <button class="modal-btn danger" onclick="confirmReset()">Yes, start new day</button>
       <button class="modal-btn cancel" onclick="closeReset()">Cancel</button>
     </div>
   </div>
@@ -818,6 +818,13 @@ function clearCart() {
 }
 
 function askReset() {
+  const saleCount = new Set(salesLog.map(r => r.saleId)).size;
+  const msg = document.getElementById('resetMsg');
+  if (saleCount > 0) {
+    msg.innerHTML = `This clears the current order and <strong>permanently erases the ${saleCount} sale${saleCount === 1 ? '' : 's'} saved on this device</strong>. Export the Sales CSV first if you still need it — this can't be undone.`;
+  } else {
+    msg.textContent = 'This clears the current order and resets the tax / card fee toggles. No sales are saved yet.';
+  }
   document.getElementById('resetModal').classList.add('open');
 }
 
@@ -828,9 +835,14 @@ function closeReset() {
 function confirmReset() {
   quantities = {};
   comboMeta = {};
+  selections = {};
+  salesLog = [];
+  localStorage.removeItem(SALES_LOG_KEY);
+  localStorage.removeItem(SALE_SEQ_KEY);
   document.getElementById('taxToggle').checked = false;
   document.getElementById('cardToggle').checked = false;
   render();
+  updateExportBtn();
   closeReset();
 }
 
