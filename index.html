@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Merch Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #080808;
@@ -25,7 +28,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Courier New', monospace;
+    font-family: 'Atkinson Hyperlegible', -apple-system, 'Segoe UI', Arial, sans-serif;
     min-height: 100vh;
     padding: 16px;
   }
@@ -415,7 +418,7 @@ async function loadData() {
     if (!res.ok) throw new Error('Network error');
     const text = await res.text();
     items = parseCSV(text);
-    items.sort((a, b) => (parseFloat(a['price']) || 0) - (parseFloat(b['price']) || 0));
+    items.sort((a, b) => (parseFloat(b['price']) || 0) - (parseFloat(a['price']) || 0));
     items.forEach(item => quantities[item.name] = 0);
 
     document.getElementById('status').style.display = 'none';
