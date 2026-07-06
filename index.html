@@ -147,11 +147,24 @@
 
   .item-row {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     background: var(--surface);
     border: 2px solid #333;
     border-radius: var(--radius);
     padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .item-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .item-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 12px;
   }
 
@@ -168,6 +181,27 @@
     color: var(--accent);
     min-width: 56px;
     text-align: right;
+  }
+
+  .var-selects {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .var-select {
+    background: var(--surface2);
+    border: 2px solid #444;
+    border-radius: 8px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1.05rem;
+    font-weight: 700;
+    padding: 8px 10px;
+    min-height: 44px;
+    max-width: 100%;
+    cursor: pointer;
   }
 
   .qty-controls {
@@ -488,46 +522,127 @@
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSN5_ovygfet8p9Pr9T9Vlek8PCD7EKOA1UGxAVY4gliPrW-UlzPaYHvufQy1UZX9e8JbhR7mmldHA9/pub?output=csv';
 const SALES_LOG_KEY = 'merchSalesLog';
 const EXPORT_SEQ_KEY = 'merchExportSeq';
+const SALE_SEQ_KEY = 'merchSaleSeq';
+const COMBO_SEP = '␟';
 
 let items = [];
-let quantities = {};
+let quantities = {};    // comboKey -> qty
+let comboMeta = {};     // comboKey -> {name, v1, v2, price}
+let selections = {};    // item name -> {v1, v2} currently chosen in dropdowns
 let salesLog = loadSalesLog();
 
+// Quote-aware CSV parser: handles commas and escaped quotes inside "..." fields
+function parseCSVRows(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ',') {
+      row.push(field); field = '';
+    } else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(field); field = '';
+      rows.push(row); row = [];
+    } else {
+      field += c;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
 function parseCSV(text) {
-  const lines = text.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g,''));
-  return lines.slice(1).map(line => {
-    const cols = line.split(',').map(c => c.trim().replace(/"/g,''));
+  const rows = parseCSVRows(text.trim());
+  if (!rows.length) return [];
+  const headers = rows[0].map(h => h.trim().toLowerCase());
+  return rows.slice(1).map(cols => {
     const obj = {};
-    headers.forEach((h, i) => obj[h] = cols[i] || '');
+    headers.forEach((h, i) => obj[h] = (cols[i] !== undefined ? cols[i] : '').trim());
     return obj;
   }).filter(r => r['name'] && r['name'].trim());
+}
+
+function getVarOptions(item, key) {
+  const raw = (item[key] || '').trim();
+  if (!raw) return [];
+  return raw.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+function comboKey(name, v1, v2) {
+  return [name, v1, v2].join(COMBO_SEP);
+}
+
+function displayName(name, v1, v2) {
+  let s = name;
+  if (v1) s += ` (${v1})`;
+  if (v2) s += ` (${v2})`;
+  return s;
+}
+
+function ensureSelection(name, opts1, opts2) {
+  if (!selections[name]) {
+    selections[name] = { v1: opts1[0] || '', v2: opts2[0] || '' };
+  }
+  return selections[name];
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function varSelectHtml(idx, dim, options, selectedVal) {
+  const opts = options.map(o =>
+    `<option value="${escHtml(o)}"${o === selectedVal ? ' selected' : ''}>${escHtml(o)}</option>`
+  ).join('');
+  return `<select class="var-select" onchange="selectVar(${idx}, '${dim}', this.value)">${opts}</select>`;
 }
 
 function render() {
   const grid = document.getElementById('items-grid');
   const taxOn = document.getElementById('taxToggle').checked;
 
-  grid.innerHTML = items.map(item => {
-    const qty = quantities[item.name] || 0;
+  grid.innerHTML = items.map((item, idx) => {
     const price = parseFloat(item['price']) || 0;
+    const opts1 = getVarOptions(item, 'var1');
+    const opts2 = getVarOptions(item, 'var2');
+    const sel = ensureSelection(item.name, opts1, opts2);
+    const key = comboKey(item.name, sel.v1, sel.v2);
+    const qty = quantities[key] || 0;
+
+    let selectsHtml = '';
+    if (opts1.length) selectsHtml += varSelectHtml(idx, 'v1', opts1, sel.v1);
+    if (opts2.length) selectsHtml += varSelectHtml(idx, 'v2', opts2, sel.v2);
+
     return `
       <div class="item-row">
-        <span class="item-name">${item.name}</span>
-        <span class="item-price">$${price.toFixed(2)}</span>
-        <div class="qty-controls">
-          <button class="qty-btn" onclick="changeQty('${item.name}', -1)">−</button>
-          <div class="qty-display">${qty}</div>
-          <button class="qty-btn" onclick="changeQty('${item.name}', 1)">+</button>
+        <div class="item-head">
+          <span class="item-name">${escHtml(item.name)}</span>
+          <span class="item-price">$${price.toFixed(2)}</span>
+        </div>
+        <div class="item-bottom">
+          <div class="var-selects">${selectsHtml}</div>
+          <div class="qty-controls">
+            <button class="qty-btn" onclick="changeQty(${idx}, -1)">−</button>
+            <div class="qty-display">${qty}</div>
+            <button class="qty-btn" onclick="changeQty(${idx}, 1)">+</button>
+          </div>
         </div>
       </div>`;
   }).join('');
 
-  // Totals
-  const subtotal = items.reduce((sum, item) => {
-    const qty = quantities[item.name] || 0;
-    const price = parseFloat(item['price']) || 0;
-    return sum + qty * price;
+  // Totals — sum across every variety combination in the cart
+  const comboKeys = Object.keys(quantities).filter(k => quantities[k] > 0);
+  const subtotal = comboKeys.reduce((sum, k) => {
+    const m = comboMeta[k];
+    return sum + quantities[k] * (m ? m.price : 0);
   }, 0);
 
   const cardOn = document.getElementById('cardToggle').checked;
@@ -541,24 +656,23 @@ function render() {
   document.getElementById('tax-line').style.display = taxOn ? 'flex' : 'none';
   document.getElementById('card-line').style.display = cardOn ? 'flex' : 'none';
 
-  // Order summary
+  // Order summary — one line per variety combination
   const orderItems = document.getElementById('order-items');
-  const ordered = items.filter(item => (quantities[item.name] || 0) > 0);
-  if (ordered.length === 0) {
+  if (comboKeys.length === 0) {
     orderItems.innerHTML = '<div class="order-empty">nothing yet</div>';
   } else {
-    orderItems.innerHTML = ordered.map(item => {
-      const qty = quantities[item.name];
-      const price = parseFloat(item['price']) || 0;
-      const lineTotal = qty * price;
+    orderItems.innerHTML = comboKeys.map(k => {
+      const m = comboMeta[k];
+      const qty = quantities[k];
+      const lineTotal = qty * m.price;
       return `<div class="order-item-line">
-        <span class="item-label"><em>${qty}×</em>${item.name}</span>
+        <span class="item-label"><em>${qty}×</em>${escHtml(displayName(m.name, m.v1, m.v2))}</span>
         <span>$${lineTotal.toFixed(2)}</span>
       </div>`;
     }).join('');
   }
 
-  document.getElementById('completeBtn').disabled = ordered.length === 0;
+  document.getElementById('completeBtn').disabled = comboKeys.length === 0;
 }
 
 function loadSalesLog() {
@@ -587,31 +701,42 @@ function updateExportBtn() {
     : `⬇ Export Sales CSV (${saleCount} sale${saleCount === 1 ? '' : 's'})`;
 }
 
+function nextSaleId() {
+  const now = new Date();
+  const yymmdd = now.getFullYear().toString().slice(2)
+    + String(now.getMonth() + 1).padStart(2, '0')
+    + String(now.getDate()).padStart(2, '0');
+  let store = null;
+  try { store = JSON.parse(localStorage.getItem(SALE_SEQ_KEY)); } catch (e) {}
+  const seq = (store && store.date === yymmdd) ? store.seq + 1 : 1;
+  localStorage.setItem(SALE_SEQ_KEY, JSON.stringify({ date: yymmdd, seq }));
+  return `${yymmdd}.${String(seq).padStart(3, '0')}`;
+}
+
 function completeSale() {
   const taxOn = document.getElementById('taxToggle').checked;
   const cardOn = document.getElementById('cardToggle').checked;
-  const ordered = items.filter(item => (quantities[item.name] || 0) > 0);
-  if (ordered.length === 0) return;
+  const comboKeys = Object.keys(quantities).filter(k => quantities[k] > 0);
+  if (comboKeys.length === 0) return;
 
-  const subtotal = ordered.reduce((sum, item) => sum + quantities[item.name] * (parseFloat(item['price']) || 0), 0);
+  const subtotal = comboKeys.reduce((sum, k) => sum + quantities[k] * comboMeta[k].price, 0);
   const tax = taxOn ? subtotal * 0.085 : 0;
   const card = cardOn ? 2 : 0;
   const total = subtotal + tax + card;
 
   const now = new Date();
-  const saleId = now.getTime();
+  const saleId = nextSaleId();
 
-  ordered.forEach(item => {
-    const qty = quantities[item.name];
-    const price = parseFloat(item['price']) || 0;
+  comboKeys.forEach(k => {
+    const m = comboMeta[k];
+    const qty = quantities[k];
     salesLog.push({
       saleId,
       date: now.toLocaleDateString(),
-      time: now.toLocaleTimeString(),
-      item: item.name,
+      item: displayName(m.name, m.v1, m.v2),
       qty,
-      unitPrice: price,
-      lineTotal: qty * price,
+      unitPrice: m.price,
+      lineTotal: qty * m.price,
       taxApplied: taxOn ? 'yes' : 'no',
       cardFeeApplied: cardOn ? 'yes' : 'no',
       saleTotal: total
@@ -632,9 +757,9 @@ function completeSale() {
 function exportSalesCSV() {
   if (salesLog.length === 0) return;
 
-  const headers = ['Date', 'Item', 'Qty', 'Unit Price', 'Line Total', 'Tax Applied', 'Card Fee Applied', 'Sale Total'];
+  const headers = ['Sale ID', 'Date', 'Item', 'Qty', 'Unit Price', 'Line Total', 'Tax Applied', 'Card Fee Applied', 'Sale Total'];
   const rows = salesLog.map(r => [
-    r.date, r.item, r.qty,
+    r.saleId, r.date, r.item, r.qty,
     r.unitPrice.toFixed(2), r.lineTotal.toFixed(2),
     r.taxApplied, r.cardFeeApplied, r.saleTotal.toFixed(2)
   ]);
@@ -658,13 +783,37 @@ function exportSalesCSV() {
   URL.revokeObjectURL(url);
 }
 
-function changeQty(name, delta) {
-  quantities[name] = Math.max(0, (quantities[name] || 0) + delta);
+function selectVar(idx, dim, value) {
+  const item = items[idx];
+  if (!item) return;
+  const opts1 = getVarOptions(item, 'var1');
+  const opts2 = getVarOptions(item, 'var2');
+  const sel = ensureSelection(item.name, opts1, opts2);
+  sel[dim] = value;
+  render();
+}
+
+function changeQty(idx, delta) {
+  const item = items[idx];
+  if (!item) return;
+  const opts1 = getVarOptions(item, 'var1');
+  const opts2 = getVarOptions(item, 'var2');
+  const sel = ensureSelection(item.name, opts1, opts2);
+  const key = comboKey(item.name, sel.v1, sel.v2);
+  const next = Math.max(0, (quantities[key] || 0) + delta);
+  if (next === 0) {
+    delete quantities[key];
+    delete comboMeta[key];
+  } else {
+    quantities[key] = next;
+    comboMeta[key] = { name: item.name, v1: sel.v1, v2: sel.v2, price: parseFloat(item['price']) || 0 };
+  }
   render();
 }
 
 function clearCart() {
   quantities = {};
+  comboMeta = {};
   render();
 }
 
@@ -678,6 +827,7 @@ function closeReset() {
 
 function confirmReset() {
   quantities = {};
+  comboMeta = {};
   document.getElementById('taxToggle').checked = false;
   document.getElementById('cardToggle').checked = false;
   render();
