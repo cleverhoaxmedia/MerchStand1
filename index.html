@@ -48,46 +48,6 @@
     margin-bottom: 16px;
   }
 
-  /* Tier selector — dev option at bottom */
-  .tier-footer {
-    margin-top: 24px;
-    padding-top: 12px;
-    border-top: 1px solid #222;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .tier-footer label {
-    font-size: 0.9rem;
-    color: var(--muted);
-    letter-spacing: 0.05em;
-    font-weight: 700;
-  }
-
-  .tier-select {
-    background: var(--surface2);
-    border: 2px solid var(--accent);
-    border-radius: 6px;
-    color: var(--accent);
-    font-family: inherit;
-    font-size: 0.9rem;
-    font-weight: 900;
-    padding: 5px 10px;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    letter-spacing: 0.05em;
-  }
-
-  .tier-select option {
-    background: var(--surface);
-    color: var(--text);
-  }
-
-  .tier-select:focus { outline: none; }
-
   /* Order summary line items inside totals box */
   .order-items {
     margin-bottom: 4px;
@@ -200,14 +160,10 @@
   .item-price {
     font-size: 1rem;
     font-weight: 700;
-    color: var(--muted);
+    color: var(--accent);
     min-width: 44px;
     text-align: right;
   }
-
-  .item-price.tier-low,
-  .item-price.tier-mid,
-  .item-price.tier-high { color: var(--accent); }
 
   .qty-controls {
     display: flex;
@@ -364,16 +320,6 @@
   </div>
 
   <button class="reset-btn" onclick="resetAll()">↺ Reset All</button>
-
-  <!-- Dev tier selector -->
-  <div class="tier-footer">
-    <label for="tierSelect">v</label>
-    <select class="tier-select" id="tierSelect" onchange="setTier(this.value)">
-      <option value="low">cookie</option>
-      <option value="mid" selected>cupcake</option>
-      <option value="high">tiramisu</option>
-    </select>
-  </div>
 </div>
 
 <div class="status" id="status">Fetching prices…</div>
@@ -383,7 +329,6 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSN5_ovygfet8p9
 
 let items = [];
 let quantities = {};
-let currentTier = 'mid';
 
 function parseCSV(text) {
   const lines = text.trim().split('\n');
@@ -396,31 +341,17 @@ function parseCSV(text) {
   }).filter(r => r['name'] && r['name'].trim());
 }
 
-function getTierKey() {
-  if (currentTier === 'low')  return 'price (low)';
-  if (currentTier === 'mid')  return 'price (mid)';
-  if (currentTier === 'high') return 'price (high)';
-}
-
-function setTier(tier) {
-  currentTier = tier;
-  const sel = document.getElementById('tierSelect');
-  if (sel) sel.value = tier;
-  render();
-}
-
 function render() {
   const grid = document.getElementById('items-grid');
   const taxOn = document.getElementById('taxToggle').checked;
-  const tierKey = getTierKey();
 
   grid.innerHTML = items.map(item => {
     const qty = quantities[item.name] || 0;
-    const price = parseFloat(item[tierKey]) || 0;
+    const price = parseFloat(item['price']) || 0;
     return `
       <div class="item-row">
         <span class="item-name">${item.name}</span>
-        <span class="item-price tier-${currentTier}">$${price.toFixed(2)}</span>
+        <span class="item-price">$${price.toFixed(2)}</span>
         <div class="qty-controls">
           <button class="qty-btn" onclick="changeQty('${item.name}', -1)">−</button>
           <div class="qty-display">${qty}</div>
@@ -432,7 +363,7 @@ function render() {
   // Totals
   const subtotal = items.reduce((sum, item) => {
     const qty = quantities[item.name] || 0;
-    const price = parseFloat(item[tierKey]) || 0;
+    const price = parseFloat(item['price']) || 0;
     return sum + qty * price;
   }, 0);
 
@@ -455,7 +386,7 @@ function render() {
   } else {
     orderItems.innerHTML = ordered.map(item => {
       const qty = quantities[item.name];
-      const price = parseFloat(item[tierKey]) || 0;
+      const price = parseFloat(item['price']) || 0;
       const lineTotal = qty * price;
       return `<div class="order-item-line">
         <span class="item-label"><em>${qty}×</em>${item.name}</span>
@@ -487,7 +418,7 @@ async function loadData() {
     document.getElementById('app').style.display = 'block';
     document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
 
-    setTier('mid');
+    render();
   } catch (e) {
     document.getElementById('status').textContent = '⚠ Could not load sheet. Check the share URL.';
     document.getElementById('status').className = 'status error';
