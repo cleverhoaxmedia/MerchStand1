@@ -11,7 +11,7 @@
     --surface2: #1e1e1e;
     --border: #2e2e2e;
     --text: #ffffff;
-    --muted: #aaaaaa;
+    --muted: #c9c9c9;
     --low: #4ade80;
     --mid: #facc15;
     --high: #f87171;
@@ -31,7 +31,7 @@
   }
 
   h1 {
-    font-size: 1.8rem;
+    font-size: 2.1rem;
     font-weight: 900;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -43,7 +43,8 @@
   .subtitle {
     text-align: center;
     color: var(--muted);
-    font-size: 0.8rem;
+    font-size: 1rem;
+    font-weight: 700;
     letter-spacing: 0.05em;
     margin-bottom: 16px;
   }
@@ -57,8 +58,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 5px 0;
-    font-size: 0.9rem;
+    padding: 7px 0;
+    font-size: 1.1rem;
+    font-weight: 700;
     border-bottom: 1px solid var(--border);
   }
 
@@ -69,13 +71,13 @@
   .order-item-line .item-label em {
     font-style: normal;
     color: var(--text);
-    font-weight: 700;
+    font-weight: 900;
     margin-right: 4px;
   }
 
   .order-empty {
-    color: #333;
-    font-size: 0.8rem;
+    color: #555;
+    font-size: 0.95rem;
     font-style: italic;
     padding: 4px 0 8px;
     border-bottom: 1px solid var(--border);
@@ -94,7 +96,7 @@
   }
 
   .tax-label {
-    font-size: 1rem;
+    font-size: 1.15rem;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -152,16 +154,16 @@
 
   .item-name {
     flex: 1;
-    font-size: 1rem;
+    font-size: 1.25rem;
     font-weight: 900;
     letter-spacing: 0.03em;
   }
 
   .item-price {
-    font-size: 1rem;
-    font-weight: 700;
+    font-size: 1.25rem;
+    font-weight: 900;
     color: var(--accent);
-    min-width: 44px;
+    min-width: 56px;
     text-align: right;
   }
 
@@ -175,12 +177,12 @@
   }
 
   .qty-btn {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     border: none;
     background: var(--surface2);
     color: var(--accent);
-    font-size: 1.4rem;
+    font-size: 1.7rem;
     font-weight: 900;
     cursor: pointer;
     display: flex;
@@ -193,17 +195,17 @@
   .qty-btn:active { background: var(--accent); color: var(--accent-text); }
 
   .qty-display {
-    width: 36px;
+    width: 44px;
     text-align: center;
-    font-size: 1rem;
+    font-size: 1.25rem;
     font-weight: 900;
     background: var(--bg);
     color: var(--text);
     border: none;
     border-left: 2px solid #444;
     border-right: 2px solid #444;
-    height: 40px;
-    line-height: 40px;
+    height: 48px;
+    line-height: 48px;
   }
 
   /* Totals */
@@ -219,8 +221,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 0;
-    font-size: 1rem;
+    padding: 7px 0;
+    font-size: 1.15rem;
     font-weight: 700;
   }
 
@@ -228,26 +230,26 @@
     border-bottom: 1px solid #2e2e2e;
   }
 
-  .total-line .label { color: var(--muted); font-size: 0.9rem; font-weight: 700; letter-spacing: 0.05em; }
+  .total-line .label { color: var(--muted); font-size: 1.05rem; font-weight: 700; letter-spacing: 0.05em; }
 
   .grand-total {
-    font-size: 1.8rem;
+    font-size: 2.2rem;
     font-weight: 900;
     color: var(--accent);
   }
 
-  .grand-total .label { color: var(--text); font-size: 1rem; font-weight: 900; letter-spacing: 0.08em; }
+  .grand-total .label { color: var(--text); font-size: 1.25rem; font-weight: 900; letter-spacing: 0.08em; }
 
   /* Reset */
   .reset-btn {
     width: 100%;
-    padding: 14px;
+    padding: 16px;
     border: 2px solid #444;
     border-radius: var(--radius);
     background: var(--surface2);
     color: var(--muted);
     font-family: inherit;
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 0.15em;
@@ -262,7 +264,8 @@
     text-align: center;
     padding: 40px 16px;
     color: var(--muted);
-    font-size: 0.9rem;
+    font-size: 1.1rem;
+    font-weight: 700;
   }
 
   .status.error { color: var(--high); }
@@ -412,6 +415,7 @@ async function loadData() {
     if (!res.ok) throw new Error('Network error');
     const text = await res.text();
     items = parseCSV(text);
+    items.sort((a, b) => (parseFloat(a['price']) || 0) - (parseFloat(b['price']) || 0));
     items.forEach(item => quantities[item.name] = 0);
 
     document.getElementById('status').style.display = 'none';
